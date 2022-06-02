@@ -1,0 +1,44 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: cloudwatch-alert
+  namespace: prod
+spec:
+  concurrencyPolicy: Allow
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - image: :yourimagehere:
+            command: ["python"]
+            args: ['main.py']
+            env:
+            - name: AWS_REGION
+              value: eu-central-1
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: alert-secrets
+                  key: aws-key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: alert-secrets
+                  key: aws-secret-key
+            - name: SLACK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: alert-secrets
+                  key: slack-token
+            - name: QUEUE_NAME
+              value: :queueNamehere:
+            - name: SLACK_CHANNEL_ID
+              value: :slackIDhere:
+            imagePullPolicy: Always
+            name: cloudwatch-alert
+          restartPolicy: OnFailure
+          terminationGracePeriodSeconds: 30
+  schedule: '0 * * * *'
+  successfulJobsHistoryLimit: 3
